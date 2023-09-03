@@ -35,7 +35,7 @@ def modifyFiles(file_path, file_name,extension):
 def main():
     file_path = input("Path of the folder with files to be converted: ")
     files = os.listdir(file_path)
-    os.mkdir(file_path+"\\format_conversion.pyModified Files")
+    os.mkdir(file_path+"\\Modified Files")
     for i in files:
         file_name, file_extension = os.path.splitext(i)
 
