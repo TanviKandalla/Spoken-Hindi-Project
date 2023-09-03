@@ -28,7 +28,7 @@ def modifyFiles(file_path, file_name,extension):
         temp = returnString(sentence_tags[i].text, sentence_tags[i]['id'],file_name)
         new_string += temp + '\n'
     # Open the file in write mode and write the new format string
-    with open(file_path+file_name+'.txt', 'w', encoding = 'utf-8') as file:
+    with open(file_path+"\\Modified Files\\"+file_name+'.txt', 'w', encoding = 'utf-8') as file:
         file.write(new_string)
     return
 
@@ -36,9 +36,10 @@ def main():
     file_path = input("Path of the file to be converted: ")
     file_name = input("Name of the file to be converted: ")
     file_extension = input("Extension of the file to be converted")
+    os.mkdir(file_path + "\\Modified Files")
     modifyFiles(file_path, file_name, file_extension)
     """files = os.listdir(file_path)
-    os.mkdir(file_path+"\\format_conversion.pyModified Files")
+    os.mkdir(file_path+"\\Modified Files")
     for i in files:
         file_name, file_extension = os.path.splitext(i)
 
