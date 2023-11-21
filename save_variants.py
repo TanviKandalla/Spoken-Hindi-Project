@@ -91,6 +91,9 @@ def split_tags(df,tag_column):
     df3 = df3.fillna('')
     df = pd.concat([df, df3.drop(3, axis = 1)], axis = 1)
     
+
+    if 'drel' not in df.columns:
+    	df['drel'] = ':'
     if 'drel' in df.columns:
         # Split the column into two columns containing `type` and `location`.
         df_drel = pd.DataFrame([x.split(':') for x in df['drel']], columns=['drel_type', 'drel_location'])
@@ -185,6 +188,8 @@ def fill_and_flatten(original_list, permutation, original_permutation):
     
     index = 0
     flag = 0 #0 means first index is chunk, next is not, etc. & 1 means first index is not, next is chunk, etc.
+    if filled_original == []:
+    	return new_list
     if filled_original[0] not in permutation:
         flag = 1
     for i in range(0,len(filled_original)):
