@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[139]:
 
 
 from bs4 import BeautifulSoup
@@ -20,8 +20,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
-# In[3]:
+# In[140]:
 
 
 def sentence_creation(file_contents):
@@ -32,7 +31,7 @@ def sentence_creation(file_contents):
     return sentence_tags
 
 
-# In[4]:
+# In[141]:
 
 
 def create_df(text): #input should be sentence_tags[i], it will return the dataframe for that
@@ -63,7 +62,7 @@ def create_df(text): #input should be sentence_tags[i], it will return the dataf
     return df
 
 
-# In[5]:
+# In[142]:
 
 
 def split_tags(df,tag_column):
@@ -102,7 +101,7 @@ def split_tags(df,tag_column):
     return df
 
 
-# In[6]:
+# In[143]:
 
 
 def linked_vgf(df): #to generate list of indices linked to vgf
@@ -152,7 +151,7 @@ def linked_vgf(df): #to generate list of indices linked to vgf
     return vgf_linked,last_vgf
 
 
-# In[7]:
+# In[144]:
 
 
 def count_words(result):
@@ -168,7 +167,7 @@ def count_words(result):
     return words
 
 
-# In[9]:
+# In[145]:
 
 
 def fill_and_flatten(original_list, permutation, original_permutation):
@@ -190,6 +189,9 @@ def fill_and_flatten(original_list, permutation, original_permutation):
     flag = 0 #0 means first index is chunk, next is not, etc. & 1 means first index is not, next is chunk, etc.
     if filled_original == []:
     	return new_list
+    if original_permutation[0][0] != 0:
+        temp = list(range(0,original_permutation[0][0]))
+        filled_original.insert(0, temp)
     if filled_original[0] not in permutation:
         flag = 1
     for i in range(0,len(filled_original)):
@@ -218,7 +220,7 @@ def fill_and_flatten(original_list, permutation, original_permutation):
     return sum(new_list, [])
 
 
-# In[10]:
+# In[146]:
 
 
 def apply_permutation(original_list, permutations):
@@ -228,7 +230,7 @@ def apply_permutation(original_list, permutations):
     return new_list
 
 
-# In[11]:
+# In[147]:
 
 
 def split_at_double_parentheses(lst):
@@ -242,7 +244,7 @@ def split_at_double_parentheses(lst):
     return result
 
 
-# In[18]:
+# In[148]:
 
 
 def main():
@@ -259,62 +261,68 @@ def main():
         else:
             file_name.append(files[i])
             file_extension.append('')
-
+    different_words = []
     for i in range(0,len(file_name)):
         print("Current file: "+file_name[i])
         os.makedirs(file_path + '\\' + file_name[i] + ' Variants', exist_ok=True)
-        save_to_file = ""
-        original_sentence = ""
 
         with open(file_path+"\\"+file_name[i]+file_extension[i],'r',encoding='utf-8') as file:
             file_contents = file.read()
 
         sentence_tags = sentence_creation(file_contents)
-        df = create_df(sentence_tags[3])
-        df = split_tags(df, 3)
-        vgf_linked, last_vgf = linked_vgf(df)
-        permutations = list(itertools.permutations(vgf_linked))
+        for sentence in range(0,len(sentence_tags)):
+            soup = BeautifulSoup(str(sentence_tags[sentence]), 'xml')
+            sentence_id = soup.sentence['id']
+            save_to_file = "Sentence ID: " + str(sentence_id) + "\n"
+            original_sentence = ""
+            df = create_df(sentence_tags[sentence])
+            df = split_tags(df, 3)
+            vgf_linked, last_vgf = linked_vgf(df)
+            permutations = list(itertools.permutations(vgf_linked))
 
-        # Original sentence
-        original = ' '.join(df[1])  # Joining all words in the original sentence
+            # Original sentence
+            original = ' '.join(df[1])  # Joining all words in the original sentence
+            
+            original_sentence = "Sentence ID: " + str(sentence_id) + "\n"
+            original_sentence += ''.join(re.findall(r'\(\(.*?\)\)', original)).translate(str.maketrans("", "", string.punctuation))
 
-        original_sentence = ''.join(re.findall(r'\(\(.*?\)\)', original)).translate(str.maketrans("", "", string.punctuation))
+            variants = []
+            for j in range(len(permutations)):
+                temp = [item for sublist in permutations[j] for item in sublist]
+                result2 = ''.join(re.findall(r'\(\(.*?\)\)', original)).split(' ').copy()
+                result2 = split_at_double_parentheses(result2)
+                temp_permutation = fill_and_flatten(result2, permutations[j], vgf_linked)
+                output = []
+                for k in range(0,len(temp_permutation)):
+                    output.append(result2[temp_permutation[k]])
+                for k in range(0,len(output)):
+                    if output[k] == '))' or output[k] == '((':
+                        output[k] = ''
+                #result2 = apply_permutation(result2, temp_permutation)
+        #         result2 = ' '.join(result2).translate(str.maketrans("", "", string.punctuation)).split()
+                variants.append(output)
 
-        variants = []
-        for j in range(len(permutations)):
-            temp = [item for sublist in permutations[j] for item in sublist]
-            result2 = ''.join(re.findall(r'\(\(.*?\)\)', original)).split(' ').copy()
-            result2 = split_at_double_parentheses(result2)
-            temp_permutation = fill_and_flatten(result2, permutations[j], vgf_linked)
-            output = []
-            for k in range(0,len(temp_permutation)):
-                output.append(result2[temp_permutation[k]])
-            for k in range(0,len(output)):
-                if output[k] == '))' or output[k] == '((':
-                    output[k] = ''
-            #result2 = apply_permutation(result2, temp_permutation)
-    #         result2 = ' '.join(result2).translate(str.maketrans("", "", string.punctuation)).split()
-            variants.append(output)
+            all_variants = [' '.join(variant) for variant in variants]
 
-        all_variants = [' '.join(variant) for variant in variants]
+            flag = 0
+            print("Original sentence: ",original_sentence, str(count_words(original_sentence.split())))
+            for j in range(len(permutations)):
+                save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())) + '\n'
+                if count_words(all_variants[j].split()) != count_words(original_sentence.split())-3:
+                    print("This variant has a different number of words: ", all_variants[j], count_words(all_variants[j].split()))
+                    different_words.append(sentence_id)
+                    flag = 1
 
-        flag = 0
-        for j in range(len(permutations)):
-            save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())) + '\n'
-            if count_words(all_variants[j].split()) != count_words(original_sentence.split()):
-                print("This variant has a different number of words: ", all_variants[j])
-                flag = 1
+#             if flag == 0:
+#                 print("All variants have the same number of words")
+            with open(file_path + '\\' + file_name[i] + " Variants\\Variants.txt", 'w', encoding='utf-8') as f:
+                f.write(save_to_file)
 
-        if flag == 0:
-            print("All variants have the same number of words")
-        with open(file_path + '\\' + file_name[i] + " Variants\\Variants.txt", 'w', encoding='utf-8') as f:
-            f.write(save_to_file)
-
-        with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'w', encoding='utf-8') as f:
-            f.write(original_sentence + '\t' + str(count_words(original_sentence.split())))
+            with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'w', encoding='utf-8') as f:
+                f.write(original_sentence + '\t' + str(count_words(original_sentence.split())))
 
 
-# In[17]:
+# In[134]:
 
 
 if __name__ == "__main__":
