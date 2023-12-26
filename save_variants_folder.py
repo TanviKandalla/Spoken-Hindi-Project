@@ -307,7 +307,7 @@ def main():
             flag = 0
             print("Original sentence: ",original_sentence, str(count_words(original_sentence.split())))
             for j in range(len(permutations)):
-                save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())) + '\n'
+                save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())+3) + '\n'
                 if count_words(all_variants[j].split()) != count_words(original_sentence.split())-3:
                     print("This variant has a different number of words: ", all_variants[j], count_words(all_variants[j].split()))
                     different_words.append(sentence_id)
@@ -315,10 +315,12 @@ def main():
 
 #             if flag == 0:
 #                 print("All variants have the same number of words")
-            with open(file_path + '\\' + file_name[i] + " Variants\\Variants.txt", 'w', encoding='utf-8') as f:
+            with open(file_path + '\\' + file_name[i] + " Variants\\Variants.txt", 'a', encoding='utf-8') as f:
+                f.write("\n")
                 f.write(save_to_file)
 
-            with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'w', encoding='utf-8') as f:
+            with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'a', encoding='utf-8') as f:
+                f.write("\n")
                 f.write(original_sentence + '\t' + str(count_words(original_sentence.split())))
 
 
