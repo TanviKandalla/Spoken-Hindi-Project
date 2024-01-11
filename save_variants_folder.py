@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[139]:
+# In[1]:
 
 
 from bs4 import BeautifulSoup
@@ -20,7 +20,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-# In[140]:
+# In[2]:
 
 
 def sentence_creation(file_contents):
@@ -31,7 +31,7 @@ def sentence_creation(file_contents):
     return sentence_tags
 
 
-# In[141]:
+# In[11]:
 
 
 def create_df(text): #input should be sentence_tags[i], it will return the dataframe for that
@@ -58,11 +58,18 @@ def create_df(text): #input should be sentence_tags[i], it will return the dataf
         if df[0][i] == '':
             df['Chunk Number'][i] = df['Chunk Number'][i-1]
         else:
-            df['Chunk Number'][i] = math.floor(float(df[0][i]))
+            if '.' in df[0][i]:
+                match = re.search(r'(\d+)\.\d+', df[0][i])
+                if match:
+                    df['Chunk Number'][i] = int(match.group(1))
+            else:
+                    df['Chunk Number'][i] = int(df[0][i])
+            
+#             df['Chunk Number'][i] = math.floor(float(df[0][i]))
     return df
 
 
-# In[142]:
+# In[4]:
 
 
 def split_tags(df,tag_column):
@@ -90,18 +97,22 @@ def split_tags(df,tag_column):
     df3 = df3.fillna('')
     df = pd.concat([df, df3.drop(3, axis = 1)], axis = 1)
     
-
     if 'drel' not in df.columns:
     	df['drel'] = ':'
+    else:
+        for i in range(0,len(df)):
+            if df['drel'][i] == '':
+                df['drel'][i] = ':'
     if 'drel' in df.columns:
         # Split the column into two columns containing `type` and `location`.
+        drels = df['drel']
         df_drel = pd.DataFrame([x.split(':') for x in df['drel']], columns=['drel_type', 'drel_location'])
 
         df = pd.concat([df, df_drel], axis=1)
     return df
 
 
-# In[143]:
+# In[19]:
 
 
 def linked_vgf(df): #to generate list of indices linked to vgf
@@ -124,13 +135,20 @@ def linked_vgf(df): #to generate list of indices linked to vgf
         for j in range(vgf_linked[i] - 1, -1, -1): #iterate over the df backwards from i to find the linked rows
             if df[0][j] == '':
                 continue
-            if (float(df[0][j])) != float(df['Chunk Number'][j]):
+            chunk = 0
+            if '.' in df[0][j]:
+                match = re.search(r'(\d+)\.\d+', df[0][j])
+                if match:
+                    chunk = int(match.group(1))
+            else:
+                    chunk = int(df[0][j])
+            if (chunk) != float(df['Chunk Number'][j]):
                 continue
             if df['drel_location'][j] == df['name'][last_chunk]:
                 temp.append(j)
             else:
                 break
-            if float(df[0][j]) == df['Chunk Number'][j]:
+            if chunk == df['Chunk Number'][j]:
                 last_chunk = j
         vgf_linked[i] = temp
 
@@ -151,7 +169,7 @@ def linked_vgf(df): #to generate list of indices linked to vgf
     return vgf_linked,last_vgf
 
 
-# In[144]:
+# In[20]:
 
 
 def count_words(result):
@@ -167,7 +185,7 @@ def count_words(result):
     return words
 
 
-# In[145]:
+# In[21]:
 
 
 def fill_and_flatten(original_list, permutation, original_permutation):
@@ -220,7 +238,7 @@ def fill_and_flatten(original_list, permutation, original_permutation):
     return sum(new_list, [])
 
 
-# In[146]:
+# In[22]:
 
 
 def apply_permutation(original_list, permutations):
@@ -230,7 +248,7 @@ def apply_permutation(original_list, permutations):
     return new_list
 
 
-# In[147]:
+# In[23]:
 
 
 def split_at_double_parentheses(lst):
@@ -244,8 +262,7 @@ def split_at_double_parentheses(lst):
     return result
 
 
-# In[148]:
-
+# In[51]:
 
 def main():
     files = [file for file in os.listdir(file_path) if os.path.isfile(os.path.join(file_path, file))]
@@ -282,7 +299,7 @@ def main():
 
             # Original sentence
             original = ' '.join(df[1])  # Joining all words in the original sentence
-            
+
             original_sentence = "Sentence ID: " + str(sentence_id) + "\n"
             original_sentence += ''.join(re.findall(r'\(\(.*?\)\)', original)).translate(str.maketrans("", "", string.punctuation))
 
@@ -313,27 +330,20 @@ def main():
                     different_words.append(sentence_id)
                     flag = 1
 
-#             if flag == 0:
-#                 print("All variants have the same number of words")
+    #             if flag == 0:
+    #                 print("All variants have the same number of words")
             with open(file_path + '\\' + file_name[i] + " Variants\\Variants.txt", 'a', encoding='utf-8') as f:
                 f.write("\n")
                 f.write(save_to_file)
-
             with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'a', encoding='utf-8') as f:
                 f.write("\n")
                 f.write(original_sentence + '\t' + str(count_words(original_sentence.split())))
 
 
-# In[134]:
-
-
+# In[ ]:
 if __name__ == "__main__":
     file_path = input("Enter the path of the folder: ")
     main()
-
-
-# In[ ]:
-
 
 
 
