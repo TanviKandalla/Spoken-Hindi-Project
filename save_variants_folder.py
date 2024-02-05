@@ -112,7 +112,7 @@ def split_tags(df,tag_column):
     return df
 
 
-# In[5]:
+# In[190]:
 
 
 def linked_vgf(df): #to generate list of indices linked to vgf
@@ -127,24 +127,36 @@ def linked_vgf(df): #to generate list of indices linked to vgf
         if df['drel_location'][i] == df['name'][last_vgf]:
             vgf_linked.append(i)
     vgf_linked = [x for x in vgf_linked if x <= last_vgf]
+#     print(vgf_linked)
     
     for i in range(0,len(vgf_linked)): #check linked rows for each entry in vgf_linked
         temp = []
         temp.append(vgf_linked[i])
         last_chunk = vgf_linked[i]
-        for j in range(vgf_linked[i] - 1, -1, -1): #iterate over the df backwards from i to find the linked rows
+        for j in range(vgf_linked[i] - 1, -1, -1): #iterate over the df backwards from i to find the linked rows. we only need to iterate over the first word of every chunk
+            if df[1][j] != '((':
+                continue
             if df[0][j] == '':
+#                 print("empty string at index column i.e closing brackets", j)
                 continue
             chunk = 0
+#             print(j)
+#             print(last_chunk)
+#             print("jth index is connected to ",df['drel_location'][j])
+#             print("name of the connected element is ",df['name'][last_chunk])
             if '.' in df[0][j]:
                 match = re.search(r'(\d+)\.\d+', df[0][j])
                 if match:
                     chunk = int(match.group(1))
             else:
                     chunk = int(df[0][j])
-            if (chunk) != float(df['Chunk Number'][j]):
-                continue
+#             if (chunk) != float(df['Chunk Number'][j]):
+#                 continue
+#             if j==59:
+#             print(j, last_chunk, df['drel_location'][j], df['name'][last_chunk])
+#             if df['']
             if df['drel_location'][j] == df['name'][last_chunk]:
+#                 print("Match!!!!", df[1][j], df['name'][last_chunk], df['drel_location'][j])
                 temp.append(j)
             else:
                 break
@@ -169,7 +181,7 @@ def linked_vgf(df): #to generate list of indices linked to vgf
     return vgf_linked,last_vgf
 
 
-# In[6]:
+# In[191]:
 
 
 def count_words(result):
@@ -185,7 +197,7 @@ def count_words(result):
     return words
 
 
-# In[7]:
+# In[192]:
 
 
 def fill_and_flatten(original_list, permutation, original_permutation):
@@ -238,7 +250,7 @@ def fill_and_flatten(original_list, permutation, original_permutation):
     return sum(new_list, [])
 
 
-# In[8]:
+# In[193]:
 
 
 def apply_permutation(original_list, permutations):
@@ -248,7 +260,7 @@ def apply_permutation(original_list, permutations):
     return new_list
 
 
-# In[9]:
+# In[194]:
 
 
 def split_at_double_parentheses(lst):
@@ -262,7 +274,7 @@ def split_at_double_parentheses(lst):
     return result
 
 
-# In[10]:
+# In[195]:
 
 
 def dependency_length(input_text, vgf_word, linked_chunk_endings):
@@ -301,7 +313,7 @@ def dependency_length(input_text, vgf_word, linked_chunk_endings):
 # print(linked_chunk_endings)
 
 
-# In[20]:
+# In[197]:
 
 
 def main():
@@ -410,11 +422,15 @@ def main():
     print("Average number of variants per sentence: ",num_variants/total_sentences)
 
 
-# In[21]:
+# In[198]:
 
 
 if __name__ == "__main__":
     main()
+
+
+# In[ ]:
+
 
 
 
