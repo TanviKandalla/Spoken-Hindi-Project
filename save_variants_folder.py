@@ -455,7 +455,7 @@ print("Average number of variants per sentence: ",num_variants/total_sentences)
 # In[18]:
 
 
-print("missing k2: ", missing_k2,"\nMissing k1:", missing_k1,"\nBoth are missing: ", missing_both)
+print("Missing k2: ", missing_k2,"\nMissing k1:", missing_k1,"\nBoth are missing: ", missing_both)
 
 
 # In[ ]:
