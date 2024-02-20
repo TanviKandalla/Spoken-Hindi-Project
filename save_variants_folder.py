@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+
+
+
 # In[1]:
 
 
@@ -20,18 +23,18 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-# In[2]:
+# In[45]:
 
 
 def sentence_creation(file_contents):
     # Create a Beautiful Soup object
-    soup = BeautifulSoup(file_contents, 'html.parser')
+    soup = BeautifulSoup(file_contents, 'lxml')
     # Find all <text> tags and extract their content
     sentence_tags = soup.find_all('sentence')
     return sentence_tags
 
 
-# In[3]:
+# In[46]:
 
 
 def create_df(text): #input should be sentence_tags[i], it will return the dataframe for that
@@ -63,18 +66,29 @@ def create_df(text): #input should be sentence_tags[i], it will return the dataf
                 if match:
                     df['Chunk Number'][i] = int(match.group(1))
             else:
+#                     print(i, df[:i])
                     df['Chunk Number'][i] = int(df[0][i])
             
 #             df['Chunk Number'][i] = math.floor(float(df[0][i]))
+
+
+        
     return df
 
 
-# In[4]:
+# In[81]:
 
 
 def split_tags(df,tag_column):
     import numpy as np
     # Create a DataFrame with a column containing tags.
+    for i in range(0,len(df)):
+        if '&lt;' in df[tag_column][i]:
+            df[tag_column][i] = df[tag_column][i].replace('&lt;','<')
+        if '&gt;' in df[tag_column][i]:
+            df[tag_column][i] = df[tag_column][i].replace('&gt;','>')
+    
+    
     df2 = pd.DataFrame(df[tag_column])
     # Create a new DataFrame to store the extracted attributes.
     new_df = pd.DataFrame()
@@ -82,7 +96,8 @@ def split_tags(df,tag_column):
     for i in range(len(df2)):
         if df2[tag_column][i] != '':
             # Parse the tag and extract the attributes.
-            soup = BeautifulSoup(df2[tag_column][i], 'html.parser')
+#             print(i, df2[tag_column][i])
+            soup = BeautifulSoup(df2[tag_column][i], 'lxml')
             t = soup.find('fs')
             attributes = t.attrs
         else:
@@ -112,7 +127,7 @@ def split_tags(df,tag_column):
     return df
 
 
-# In[5]:
+# In[82]:
 
 
 def linked_vgf(df): #to generate list of indices linked to vgf
@@ -181,7 +196,7 @@ def linked_vgf(df): #to generate list of indices linked to vgf
     return vgf_linked,last_vgf
 
 
-# In[6]:
+# In[83]:
 
 
 def count_words(result):
@@ -197,7 +212,7 @@ def count_words(result):
     return words
 
 
-# In[7]:
+# In[84]:
 
 
 def fill_and_flatten(original_list, permutation, original_permutation):
@@ -250,7 +265,7 @@ def fill_and_flatten(original_list, permutation, original_permutation):
     return sum(new_list, [])
 
 
-# In[8]:
+# In[85]:
 
 
 def apply_permutation(original_list, permutations):
@@ -260,7 +275,7 @@ def apply_permutation(original_list, permutations):
     return new_list
 
 
-# In[9]:
+# In[86]:
 
 
 def split_at_double_parentheses(lst):
@@ -274,7 +289,7 @@ def split_at_double_parentheses(lst):
     return result
 
 
-# In[10]:
+# In[87]:
 
 
 def dependency_length(input_text, vgf_word, linked_chunk_endings):
@@ -313,153 +328,152 @@ def dependency_length(input_text, vgf_word, linked_chunk_endings):
 # print(linked_chunk_endings)
 
 
-# In[15]:
+# In[88]:
 
 
-file_path = input("Enter the path of the folder: ")
-files = [file for file in os.listdir(file_path) if os.path.isfile(os.path.join(file_path, file))]
-pattern = r'^(.+)\.([a-zA-Z0-9]+)$'
-file_name = []
-file_extension = []
-min_dependency_count = 0
-total_sentences = 0
-num_variants = 0
+def main():
+    file_path = input("Enter the path of the folder: ")
+    files = [file for file in os.listdir(file_path) if os.path.isfile(os.path.join(file_path, file))]
+    pattern = r'^(.+)\.([a-zA-Z0-9]+)$'
+    file_name = []
+    file_extension = []
+    min_dependency_count = 0
+    total_sentences = 0
+    num_variants = 0
 
-for i in range(len(files)):
-    match = re.match(pattern, files[i])
-    if match:
-        file_name.append(match.group(1))
-        file_extension.append('.' + match.group(2))
-    else:
-        file_name.append(files[i])
-        file_extension.append('')
-different_words = []
-missing_k2 = 0
-missing_k1 = 0
-missing_both = 0
-for i in range(0,len(file_name)):
-    print("Current file: "+file_name[i])
-    os.makedirs(file_path + '\\' + file_name[i] + ' Variants', exist_ok=True)
+    for i in range(len(files)):
+        match = re.match(pattern, files[i])
+        if match:
+            file_name.append(match.group(1))
+            file_extension.append('.' + match.group(2))
+        else:
+            file_name.append(files[i])
+            file_extension.append('')
+    different_words = []
+    missing_k2 = 0
+    missing_k1 = 0
+    missing_both = 0
+    for i in range(0,len(file_name)):
+        print("Current file: "+file_name[i])
+        os.makedirs(file_path + '\\' + file_name[i] + ' Variants', exist_ok=True)
 
-    with open(file_path+"\\"+file_name[i]+file_extension[i],'r',encoding='utf-8') as file:
-        file_contents = file.read()
-
-    sentence_tags = sentence_creation(file_contents)
-    total_sentences += len(sentence_tags)
-    for sentence in range(0,len(sentence_tags)):
-        soup = BeautifulSoup(str(sentence_tags[sentence]), 'xml')
-        sentence_id = soup.sentence['id']
-        save_to_file = "Sentence ID: " + str(sentence_id) + "\n"
-        original_sentence = ""
-        df = create_df(sentence_tags[sentence])
-        df = split_tags(df, 3)
-        vgf_linked, last_vgf = linked_vgf(df)
-
-        linked_chunk_endings = []
-        for j in vgf_linked:
-            # i = [48,49,50]
-            linked_chunk_endings.append(df[1][j[-2:-1][0]])
-
-        for j in range(last_vgf,len(df)):
-            if df[1][j] == '))':
-                last_vgf = j-1
-                vgf_word = df[1][j-1]
-                break
-
-        permutations = list(itertools.permutations(vgf_linked))
-
-        # Original sentence
-        original = ' '.join(df[1])  # Joining all words in the original sentence
-
-        original_sentence = "Sentence ID: " + str(sentence_id) + "\n"
-        original_sentence += ''.join(re.findall(r'\(\(.*?\)\)', original)).translate(str.maketrans("", "", string.punctuation))
+        with open(file_path+"\\"+file_name[i]+file_extension[i],'r',encoding='utf-8') as file:
+            file_contents = file.read()
         
-        ###########################
-        #if k2 is in drel_type --> d.object, k4 --> i.object, k1 --> subject, vgf --> verb
 
-        object_index = [-1,-1] #first index is for direct object, second is for indirect object location (assuming only one occurs in a sentence)
-        subject_index = -1
-        verb_index = last_vgf
-        for k in range(0,len(vgf_linked)):
-            #for each chunk linked to vgf we have to update object, subject, and verb indices
+        file_contents = file_contents.replace("&lt;","<")
+        file_contents = file_contents.replace("&gt;",">")
+        sentence_tags = sentence_creation(file_contents)
+        total_sentences += len(sentence_tags)
+        for sentence in range(0,len(sentence_tags)):
+            soup = BeautifulSoup(str(sentence_tags[sentence]), 'xml')
+            sentence_id = soup.sentence['id']
+            save_to_file = "Sentence ID: " + str(sentence_id) + "\n"
+            original_sentence = ""
+            df = create_df(sentence_tags[sentence])
+            df = split_tags(df, 3)
+            vgf_linked, last_vgf = linked_vgf(df)
 
-            for j in range(0,len(vgf_linked[k])):
-                if 'k2' in df['drel_type'][vgf_linked[k][j]]:
-                    object_index[0] = vgf_linked[k][j]
-                if 'k4' in df['drel_type'][vgf_linked[k][j]]:
-                    object_index[1] = vgf_linked[k][j]
-                if 'k1' in df['drel_type'][vgf_linked[k][j]]:
-                    subject_index = vgf_linked[k][j]
-        
-        if object_index[0] == -1 and object_index[1] == -1:
-            print("No k2 or k4")
-            missing_k2 += 1
-        if subject_index == -1:
-            print("No k1")
-            missing_k1 += 1
-        if object_index[0] == -1 and object_index[1] == -1 and subject_index == -1:
-            missing_both += 1
-        ############################
-        
-        
-        variants = []
-        dep_length = []
-        for j in range(len(permutations)):
-            temp = [item for sublist in permutations[j] for item in sublist]
-#             print(original)
-            result2 = ''.join(re.findall(r'\(\(.*?\)\)', original)).split(' ').copy()
-#             print(result2)
-            result2 = split_at_double_parentheses(result2)
-#             print(result2)
-            temp_permutation = fill_and_flatten(result2, permutations[j], vgf_linked)
-            output = []
-            for k in range(0,len(temp_permutation)):
-                output.append(result2[temp_permutation[k]])
-#             for k in range(0,len(output)):
-#                 if output[k] == '))' or output[k] == '((':
-#                     output[k] = ''
-            #result2 = apply_permutation(result2, temp_permutation)
-    #         result2 = ' '.join(result2).translate(str.maketrans("", "", string.punctuation)).split()
-            variants.append(output)
-#             print(output)
-            dep_length.append(dependency_length(output, vgf_word, linked_chunk_endings))
+            linked_chunk_endings = []
+            for j in vgf_linked:
+                # i = [48,49,50]
+                linked_chunk_endings.append(df[1][j[-2:-1][0]])
 
-        all_variants = [' '.join(variant) for variant in variants]
-        num_variants += len(permutations) #assuming here that the reference sentence also counts as a variant
-        flag = 0
-        print("Original sentence: ",original_sentence)
-        for j in range(len(permutations)):
-            save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())+3) + '\t' + str(dep_length[j]) + '\n'
-            if count_words(all_variants[j].split()) != count_words(original_sentence.split())-3:
-                print("This variant has a different number of words: ", all_variants[j], count_words(all_variants[j].split()))
-                different_words.append(sentence_id)
-                flag = 1
+            for j in range(last_vgf,len(df)):
+                if df[1][j] == '))':
+                    last_vgf = j-1
+                    vgf_word = df[1][j-1]
+                    break
 
-#             if flag == 0:
-#                 print("All variants have the same number of words")
-        with open(file_path + '\\' + file_name[i] + " Variants\\Variants.txt", 'a', encoding='utf-8') as f:
-            f.write("\n")
-            f.write(save_to_file)
-        with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'a', encoding='utf-8') as f:
-            f.write("\n")
-            f.write(original_sentence + '\t' + str(count_words(original_sentence.split())) + '\t' + str(dep_length[0]))
-        if min(dep_length) == dep_length[0]:
-            min_dependency_count += 1
+            permutations = list(itertools.permutations(vgf_linked))
+
+            # Original sentence
+            original = ' '.join(df[1])  # Joining all words in the original sentence
+
+            original_sentence = "Sentence ID: " + str(sentence_id) + "\n"
+            original_sentence += ''.join(re.findall(r'\(\(.*?\)\)', original)).translate(str.maketrans("", "", string.punctuation))
+
+            ###########################
+            #if k2 is in drel_type --> d.object, k4 --> i.object, k1 --> subject, vgf --> verb
+
+            object_index = [-1,-1] #first index is for direct object, second is for indirect object location (assuming only one occurs in a sentence)
+            subject_index = -1
+            verb_index = last_vgf
+            for k in range(0,len(vgf_linked)):
+                #for each chunk linked to vgf we have to update object, subject, and verb indices
+
+                for j in range(0,len(vgf_linked[k])):
+                    if 'k2' in df['drel_type'][vgf_linked[k][j]]:
+                        object_index[0] = vgf_linked[k][j]
+                    if 'k4' in df['drel_type'][vgf_linked[k][j]]:
+                        object_index[1] = vgf_linked[k][j]
+                    if 'k1' in df['drel_type'][vgf_linked[k][j]]:
+                        subject_index = vgf_linked[k][j]
+
+            if object_index[0] == -1 and object_index[1] == -1:
+                print("No k2 or k4")
+                missing_k2 += 1
+            if subject_index == -1:
+                print("No k1")
+                missing_k1 += 1
+            if object_index[0] == -1 and object_index[1] == -1 and subject_index == -1:
+                missing_both += 1
+            ############################
 
 
-print("Number of sentences where the original has the lowest dependency distance: ",min_dependency_count)
-print("Total number of sentences: ",total_sentences)
-print("Average number of variants per sentence: ",num_variants/total_sentences)
+            variants = []
+            dep_length = []
+            for j in range(len(permutations)):
+                temp = [item for sublist in permutations[j] for item in sublist]
+    #             print(original)
+                result2 = ''.join(re.findall(r'\(\(.*?\)\)', original)).split(' ').copy()
+    #             print(result2)
+                result2 = split_at_double_parentheses(result2)
+    #             print(result2)
+                temp_permutation = fill_and_flatten(result2, permutations[j], vgf_linked)
+                output = []
+                for k in range(0,len(temp_permutation)):
+                    output.append(result2[temp_permutation[k]])
+    #             for k in range(0,len(output)):
+    #                 if output[k] == '))' or output[k] == '((':
+    #                     output[k] = ''
+                #result2 = apply_permutation(result2, temp_permutation)
+        #         result2 = ' '.join(result2).translate(str.maketrans("", "", string.punctuation)).split()
+                variants.append(output)
+    #             print(output)
+                dep_length.append(dependency_length(output, vgf_word, linked_chunk_endings))
+
+            all_variants = [' '.join(variant) for variant in variants]
+            num_variants += len(permutations) #assuming here that the reference sentence also counts as a variant
+            flag = 0
+            print("Original sentence: ",original_sentence)
+            for j in range(len(permutations)):
+                save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())+3) + '\t' + str(dep_length[j]) + '\n'
+                if count_words(all_variants[j].split()) != count_words(original_sentence.split())-3:
+                    print("This variant has a different number of words: ", all_variants[j], count_words(all_variants[j].split()))
+                    different_words.append(sentence_id)
+                    flag = 1
+
+    #             if flag == 0:
+    #                 print("All variants have the same number of words")
+            with open(file_path + '\\' + file_name[i] + " Variants\\Variants.txt", 'a', encoding='utf-8') as f:
+                f.write("\n")
+                f.write(save_to_file)
+            with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'a', encoding='utf-8') as f:
+                f.write("\n")
+                f.write(original_sentence + '\t' + str(count_words(original_sentence.split())) + '\t' + str(dep_length[0]))
+            if min(dep_length) == dep_length[0]:
+                min_dependency_count += 1
 
 
-# In[18]:
-
-
-print("Missing k2: ", missing_k2,"\nMissing k1:", missing_k1,"\nBoth are missing: ", missing_both)
+    print("Number of sentences where the original has the lowest dependency distance: ",min_dependency_count)
+    print("Total number of sentences: ",total_sentences)
+    print("Average number of variants per sentence: ",num_variants/total_sentences)
 
 
 # In[ ]:
 
 
-
+if __name__ == "__main__":
+    main()
 
