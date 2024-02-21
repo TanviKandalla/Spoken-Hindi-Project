@@ -4,7 +4,7 @@
 
 
 
-# In[1]:
+# In[89]:
 
 
 from bs4 import BeautifulSoup
@@ -212,7 +212,7 @@ def count_words(result):
     return words
 
 
-# In[84]:
+# In[90]:
 
 
 def fill_and_flatten(original_list, permutation, original_permutation):
@@ -233,7 +233,7 @@ def fill_and_flatten(original_list, permutation, original_permutation):
     index = 0
     flag = 0 #0 means first index is chunk, next is not, etc. & 1 means first index is not, next is chunk, etc.
     if filled_original == []:
-    	return new_list
+        return new_list
     if original_permutation[0][0] != 0:
         temp = list(range(0,original_permutation[0][0]))
         filled_original.insert(0, temp)
@@ -289,7 +289,7 @@ def split_at_double_parentheses(lst):
     return result
 
 
-# In[87]:
+# In[94]:
 
 
 def dependency_length(input_text, vgf_word, linked_chunk_endings):
@@ -328,7 +328,59 @@ def dependency_length(input_text, vgf_word, linked_chunk_endings):
 # print(linked_chunk_endings)
 
 
-# In[88]:
+# In[140]:
+
+
+def osv_order(df, input_text, vgf_word, linked_chunk_endings):
+    words_in_sentence = input_text
+    chunk_positions = []
+    # print(words_in_sentence)
+
+    verb_index = -1
+    for i in range(len(words_in_sentence)-1,-1,-1):
+        if vgf_word == words_in_sentence[i]:
+            verb_index = i
+            break
+
+    object_index = [-1,-1] #first index is for direct object, second is for indirect object location (assuming only one occurs in a sentence)
+    subject_index = -1
+
+    for i in linked_chunk_endings: #for each chunk listed
+    #     print(i)
+        for j in range(len(words_in_sentence)-1,-1,-1): 
+    #             print(j, words_in_sentence[j])
+            if i==words_in_sentence[j]:
+                chunk_positions.append(j)
+                break
+
+    #now we have the chunk positions in a list. so for each word we need to find out if it is k1,k2, or k4
+    for i in range(0,len(linked_chunk_endings)):
+        for j in range(len(df)-1,-1,-1): #iterate backwards over the df
+            if df[1][j] == linked_chunk_endings[i]:
+                for k in range(j-1,-1,-1):
+                    if df[1][k] == '((':
+                        if 'k2' in df['drel_type'][k]:
+                            object_index[0] = chunk_positions[i]
+                        if 'k4' in df['drel_type'][k]:
+                            object_index[1] = chunk_positions[i]
+                        if 'k1' in df['drel_type'][k]:
+                            subject_index = chunk_positions[i]
+                        break
+
+    if object_index[0] == -1 and object_index[1] == -1 and subject_index == -1:
+        return ("V")
+    elif object_index[0] == -1 and object_index[1] == -1:
+        return ("SV")
+    elif subject_index == -1:
+        return ("OV")
+    else: #all three are present
+        if max(object_index) > subject_index:
+            return ("SOV")
+        else:
+            return ("OSV")
+
+
+# In[143]:
 
 
 def main():
@@ -353,19 +405,25 @@ def main():
     missing_k2 = 0
     missing_k1 = 0
     missing_both = 0
+    num_osv = 0
+    num_sov = 0
+    num_sv = 0
+    num_ov = 0
+    total_original_orders = [] #list of original orderings in all files
+    total_variant_orders = [] #list of variant orderings in all files
     for i in range(0,len(file_name)):
+        original_orderings = [] #list of OSV/SOV orderings for the original sentences in a file. length of the list should be no of sentences
+        variant_orderings = [] #nested list of OSV/SOV orderings for variants. each entry should be the list of orderings for the variants of that sentence
         print("Current file: "+file_name[i])
         os.makedirs(file_path + '\\' + file_name[i] + ' Variants', exist_ok=True)
 
         with open(file_path+"\\"+file_name[i]+file_extension[i],'r',encoding='utf-8') as file:
             file_contents = file.read()
-        
 
-        file_contents = file_contents.replace("&lt;","<")
-        file_contents = file_contents.replace("&gt;",">")
         sentence_tags = sentence_creation(file_contents)
         total_sentences += len(sentence_tags)
         for sentence in range(0,len(sentence_tags)):
+            #here, we have to update original_orderings ONCE and variant_orderings multiple times
             soup = BeautifulSoup(str(sentence_tags[sentence]), 'xml')
             sentence_id = soup.sentence['id']
             save_to_file = "Sentence ID: " + str(sentence_id) + "\n"
@@ -410,19 +468,32 @@ def main():
                     if 'k1' in df['drel_type'][vgf_linked[k][j]]:
                         subject_index = vgf_linked[k][j]
 
-            if object_index[0] == -1 and object_index[1] == -1:
-                print("No k2 or k4")
-                missing_k2 += 1
-            if subject_index == -1:
-                print("No k1")
-                missing_k1 += 1
             if object_index[0] == -1 and object_index[1] == -1 and subject_index == -1:
                 missing_both += 1
+                original_orderings.append("V")
+            elif object_index[0] == -1 and object_index[1] == -1:
+                print("No k2 or k4")
+                original_orderings.append("SV")
+                num_sv += 1
+                missing_k2 += 1
+            elif subject_index == -1:
+                print("No k1")
+                original_orderings.append("OV")
+                num_ov += 1
+                missing_k1 += 1
+            else: #all three are present
+                if max(object_index) > subject_index:
+                    original_orderings.append("SOV")
+                    num_sov += 1
+                else:
+                    original_orderings.append("OSV")
+                    num_osv += 1
             ############################
 
 
             variants = []
             dep_length = []
+            var_order = [] #the list that gets appended for each sentence in the file
             for j in range(len(permutations)):
                 temp = [item for sublist in permutations[j] for item in sublist]
     #             print(original)
@@ -442,13 +513,15 @@ def main():
                 variants.append(output)
     #             print(output)
                 dep_length.append(dependency_length(output, vgf_word, linked_chunk_endings))
+                var_order.append(osv_order(df, output, vgf_word, linked_chunk_endings))
+
 
             all_variants = [' '.join(variant) for variant in variants]
             num_variants += len(permutations) #assuming here that the reference sentence also counts as a variant
             flag = 0
             print("Original sentence: ",original_sentence)
             for j in range(len(permutations)):
-                save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())+3) + '\t' + str(dep_length[j]) + '\n'
+                save_to_file += all_variants[j] + '\t' + str(count_words(all_variants[j].split())+3) + '\t' + str(dep_length[j]) + '\t' + str(var_order[j]) + '\n'
                 if count_words(all_variants[j].split()) != count_words(original_sentence.split())-3:
                     print("This variant has a different number of words: ", all_variants[j], count_words(all_variants[j].split()))
                     different_words.append(sentence_id)
@@ -461,14 +534,21 @@ def main():
                 f.write(save_to_file)
             with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'a', encoding='utf-8') as f:
                 f.write("\n")
-                f.write(original_sentence + '\t' + str(count_words(original_sentence.split())) + '\t' + str(dep_length[0]))
+                f.write(original_sentence + '\t' + str(count_words(original_sentence.split())) + '\t' + str(dep_length[0]) + '\t' + var_order[0])
             if min(dep_length) == dep_length[0]:
                 min_dependency_count += 1
+        total_original_orders.append(original_orderings)
+        total_variant_orders.append(variant_orderings)
 
 
     print("Number of sentences where the original has the lowest dependency distance: ",min_dependency_count)
     print("Total number of sentences: ",total_sentences)
     print("Average number of variants per sentence: ",num_variants/total_sentences)
+    print("Missing k1: ",missing_k1)
+    print("Missing k2 and k4: ", missing_k2)
+    print("Missing both: ",missing_both)
+    print("OSV: ",num_osv)
+    print("SOV: ",num_sov)
 
 
 # In[ ]:
