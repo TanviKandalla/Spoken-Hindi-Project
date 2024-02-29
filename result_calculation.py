@@ -43,7 +43,7 @@ df[4] = is_variant
 # In[92]:
 
 
-df
+result = ''
 
 
 # In[126]:
@@ -83,15 +83,15 @@ elif variant_dds == []:
 # In[133]:
 
 
-result = ("Number of sentences where original has minimum dependency distance: ", correct_sentences)
-result+=("\nAccuracy: ", correct_sentences/total_sentences)
+result = "Number of sentences where original has minimum dependency distance: "+ str(correct_sentences)
+result+="\nAccuracy: "+ str(correct_sentences/total_sentences)
 
-result+=("\nAccuracy when performing pairwise comparisons for the above: ", correct_pairwise/total_pairs)
+result+="\nAccuracy when performing pairwise comparisons for the above: "+str(correct_pairwise/total_pairs)
 
 print(result)
 
 with open("Total Results.txt", 'w', encoding='utf-8') as f:
-    f.write(result)
+    f.write(str(result))
 
 # In[ ]:
 

@@ -1,0 +1,3 @@
+Number of sentences where original has minimum dependency distance: 350
+Accuracy: 0.6769825918762089
+Accuracy when performing pairwise comparisons for the above: 0.6105923771621001
