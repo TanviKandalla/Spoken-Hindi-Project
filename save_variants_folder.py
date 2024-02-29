@@ -18,6 +18,7 @@ import re
 import string
 import numpy as np
 import warnings
+import argparse
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
@@ -384,12 +385,15 @@ def osv_order(df, input_text, vgf_word, linked_chunk_endings):
 
 
 def main():
-    file_path = input("Enter the path of the folder: ")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', type=str, help='Folder path')
+    args = parser.parse_args()
+    file_path = args.path
     files = [file for file in os.listdir(file_path) if os.path.isfile(os.path.join(file_path, file))]
     pattern = r'^(.+)\.([a-zA-Z0-9]+)$'
     file_name = []
     file_extension = []
-    min_dependency_count = 0
     total_sentences = 0
     num_variants = 0
 
@@ -535,20 +539,23 @@ def main():
             with open(file_path + '\\' + file_name[i] + " Variants\\Original.txt", 'a', encoding='utf-8') as f:
                 f.write("\n")
                 f.write(original_sentence + '\t' + str(count_words(original_sentence.split())) + '\t' + str(dep_length[0]) + '\t' + var_order[0])
-            if min(dep_length) == dep_length[0]:
-                min_dependency_count += 1
         total_original_orders.append(original_orderings)
         total_variant_orders.append(variant_orderings)
 
 
-    print("Number of sentences where the original has the lowest dependency distance: ",min_dependency_count)
-    print("Total number of sentences: ",total_sentences)
-    print("Average number of variants per sentence: ",num_variants/total_sentences)
-    print("Missing k1: ",missing_k1)
-    print("Missing k2 and k4: ", missing_k2)
-    print("Missing both: ",missing_both)
-    print("OSV: ",num_osv)
-    print("SOV: ",num_sov)
+    results = file_path+": \n"
+    results += "\nAvg number of variants per sentence: "+str(num_variants/total_sentences)
+    results += "\nMissing k1: " + str(missing_k1)
+    results += "\nMissing k2 and k4: " + str(missing_k2)
+    results += "\nMissing both k1 and k2: " + str(missing_both)
+    results += "\nIn the original sentences,\nOSV: " + str(num_osv)
+    results += "\nSOV: " + str(num_sov)
+    with open("Results.txt", 'a', encoding='utf-8') as f:
+        f.write("\n\n")
+        f.write(results)
+
+
+    print(results)
 
 
 # In[ ]:
@@ -556,4 +563,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 

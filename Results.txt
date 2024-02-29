@@ -1,0 +1,23 @@
+
+
+C:\Users\Tanvi Kandalla\Desktop\Spoken Hindi Project\HINDI-DEPENDENCY-ALL-DOMAINS 1\HINDI-DEPENDENCY-ALL-DOMAINS\Data_Fixed\CRICKET: 
+Number of sentences where the original has the lowest dependency distance: 187
+Total number of sentences: 555
+Avg number of variants per sentence: 128.65405405405406
+Missing k1: 47
+Missing k2 and k4: 206
+Missing both k1 and k2: 26
+In the original sentences,
+OSV: 61
+SOV: 215
+
+C:\Users\Tanvi Kandalla\Desktop\Spoken Hindi Project\HINDI-DEPENDENCY-ALL-DOMAINS 1\HINDI-DEPENDENCY-ALL-DOMAINS\Data_Fixed\BOX-OFFICE: 
+Number of sentences where the original has the lowest dependency distance: 254
+Total number of sentences: 517
+Avg number of variants per sentence: 13.636363636363637
+Missing k1: 22
+Missing k2 and k4: 286
+Missing both k1 and k2: 23
+In the original sentences,
+OSV: 66
+SOV: 120
