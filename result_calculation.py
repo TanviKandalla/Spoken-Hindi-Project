@@ -83,11 +83,15 @@ elif variant_dds == []:
 # In[133]:
 
 
-print("Number of sentences where original has minimum dependency distance: ", correct_sentences)
-print("Accuracy: ", correct_sentences/total_sentences)
+result = ("Number of sentences where original has minimum dependency distance: ", correct_sentences)
+result+=("\nAccuracy: ", correct_sentences/total_sentences)
 
-print("Accuracy when performing pairwise comparisons for the above: ", correct_pairwise/total_pairs)
+result+=("\nAccuracy when performing pairwise comparisons for the above: ", correct_pairwise/total_pairs)
 
+print(result)
+
+with open("Total Results.txt", 'w', encoding='utf-8') as f:
+    f.write(result)
 
 # In[ ]:
 
