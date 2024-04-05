@@ -26,7 +26,11 @@ df = pd.read_csv("Sentence_Data.dat",delimiter = '\t',header = None)
 is_variant = []
 total_sentences = 0
 for i in range(0,len(df)):
-    temp = (float(df[0][i][df[0][i].rindex("__")+2:]))
+    if 'novar' not in df[0][i][df[0][i].rindex("__")+2:]:
+    	temp = (float(df[0][i][df[0][i].rindex("__")+2:]))
+    else:
+    	temp = (float(df[0][i][df[0][i].rindex("__")+2:df[0][i].rindex("-novar")]))
+
     if temp==round(temp):
         is_variant.append(0)
         total_sentences += 1
@@ -83,9 +87,11 @@ elif variant_dds == []:
 # In[133]:
 
 
-result = "Number of sentences where original has minimum dependency distance: "+ str(correct_sentences)
-result+="\nAccuracy: "+ str(correct_sentences/total_sentences)
 
+result = "Total number of sentences: " + str(total_sentences)
+result+= "\nNumber of sentences where original has minimum dependency distance: "+ str(correct_sentences)
+result+="\nAccuracy: "+ str(correct_sentences/total_sentences)
+result+="\nTotal number of pairwise items: "+str(total_pairs)+"\nNumber of valid pairs: "+str(correct_pairwise)
 result+="\nAccuracy when performing pairwise comparisons for the above: "+str(correct_pairwise/total_pairs)
 
 print(result)
